@@ -1,56 +1,142 @@
 """
 Write your code in this file to participate in the Chess Bot challenge!
 
-Username: <enter your username here>
+Username: ghosty
 """
 from ContestUtils import PlayerColour
-from ContestUtils import BoardState
+from ContestUtils import BoardState, BoardPiece
+import random
+
+files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
 
 class Engine:
+	def __init__(self, colour, time_per_move: float):
+		if colour == PlayerColour.White:
+			self.color = 0
+		else:
+			self.color = 1
 
-    """
-    This function will be called at the start of each game. You should use this to
-    set up any key data structures you will need for the game. You can also use
-    this function to precompute any data you will use during the game.
+		self.time_per_move = time_per_move
+	
+	def get_move(self, board_state: BoardState):
+		pos = {}
+		possibleList = []
+		enemyPosList = []
+		pawnList = []
 
-    Parameters:
-      - colour:             PlayerColour.White or PlayerColour.Black, representing the 
-                            colour your bot will be playing for this game.
-      - time_per_move:      Float representing the number of seconds you have per move
-                            for each move during this game. 
+		# get old map
+		for file in files:
+			for rank in ranks:
+				pos[file+rank] = board_state.piece_at(file, rank)
 
-    Return:
-      - Nothing. You can choose to return something if you wish, but nothing will be 
-        done with this information.
+				if self.color == 0:
+					if str(pos[file+rank]).find('Empty') != -1: # empty square
+						possibleList.append(file+rank)
 
-    Constraints:
-      - This function must complete running in at most 10 seconds, or the game will
-        automatically be considered forfeited.
-    """
-    def __init__(self, colour, time_per_move):
-        pass
+					else:
+						if str(pos[file+rank]).find('White') == -1: # black square
+							enemyPosList.append(file+rank)
 
-    """
-    This function will be called every time your opponent makes a move (or, if you're
-    playing white, also at the start). In other words, this function will be called
-    whenever it's your turn to make a move. You can use this function to calculate 
-    your next move and then send it.
+						elif str(pos[file+rank]).find('Pawn') != -1: # white pawn
+							pawnList.append(file+rank)
 
-    Parameters:
-      - board_state:        BoardState object representing the current state of the
-                            board. 
+				else:
+					if str(pos[file+rank]).find('Empty') != -1: # empty square
+						possibleList.append(file+rank)
 
-    Return:
-      - A new board state after your move is made, represented using the BoardState 
-        object. 
+					else:
+						if str(pos[file+rank]).find('Black') == -1: # white square
+							enemyPosList.append(file+rank)
 
-    Constraints:
-      - If the new board state you return is not a valid board state resulting from
-        a valid move you can make, then you will immediately lose the game.
-      - If this function takes more than time_per_move seconds to run, you will
-        immediately lose the game.
-      - You can return BoardState.resign() if you'd like to resign.
-    """
-    def get_move(self, board_state):
-        pass
+						elif str(pos[file+rank]).find('Pawn') != -1: # black pawn
+							pawnList.append(file+rank)
+
+
+		# return the new BoardState and the (oldPos, newPos) combo. Remove the latter in production
+
+		pawns = Pawns(self.color, possibleList, pawnList, enemyPosList)
+
+		optimalPawnMove = pawns.chooseOptimalMove()
+
+		pos[optimalPawnMove[0]] = BoardPiece.EmptySquare
+		
+		if(self.color == 0):
+			pos[optimalPawnMove[1]] = BoardPiece.WhitePawn
+		else:
+			pos[optimalPawnMove[1]] = BoardPiece.BlackPawn
+
+		newBoardState = BoardState(pos)
+
+		return newBoardState, optimalPawnMove
+	
+def nextChar(char: chr, inc: int):
+	return chr(ord(char)+inc)
+
+class Pawns:
+	def __init__(self, color: int, possibleList: list, pawnList: list, enemyPosList: list):
+		self.color = color
+		self.pawnList = pawnList
+		self.enemyPosList = enemyPosList
+		self.possibleList = possibleList
+
+	def getNormalMoves(self) -> list:
+		# return a list of possible moves
+		moves = []
+
+		for pawn in self.pawnList:
+			if self.color == 0:
+				if pawn[1] == '8':
+					# get new piece (queen, duh)
+					continue
+
+				if pawn[0] + nextChar(pawn[1], 1) in self.possibleList:
+					moves.append([pawn, pawn[0] + nextChar(pawn[1], 1)])
+
+				if pawn[1] == '2' and pawn[0] + nextChar(pawn[1], 2) in self.possibleList:
+					moves.append([pawn, pawn[0] + nextChar(pawn[1], 2)])
+
+			else:
+				if pawn[1] == '1':
+					# get new piece (queen, duh)
+					continue
+
+				if pawn[0] + nextChar(pawn[1], -1) in self.possibleList:
+					moves.append([pawn, pawn[0] + nextChar(pawn[1], -1)])
+
+				if pawn[1] == '7' and pawn[0] + nextChar(pawn[1], -2) in self.possibleList:
+					moves.append([pawn, pawn[0] + nextChar(pawn[1], -2)])
+
+		return moves
+
+	def getAttackingMoves(self) -> list:
+		moves = []
+
+		for pawn in self.pawnList:
+			if self.color == 0:
+				if nextChar(pawn[0], 1) + nextChar(pawn[1], 1) in self.enemyPosList:
+					moves.append([pawn, nextChar(pawn[0], 1) + nextChar(pawn[1], 1)])
+
+				if nextChar(pawn[0], -1) + nextChar(pawn[1], 1) in self.enemyPosList:
+					moves.append([pawn, nextChar(pawn[0], -1) + nextChar(pawn[1], 1)])
+
+			else:
+				if nextChar(pawn[0], 1) + nextChar(pawn[1], -1) in self.enemyPosList:
+					moves.append([pawn, nextChar(pawn[0], 1) + nextChar(pawn[1], -1)])
+
+				if nextChar(pawn[0], -1) + nextChar(pawn[1], -1) in self.enemyPosList:
+					moves.append([pawn, nextChar(pawn[0], -1) + nextChar(pawn[1], -1)])
+
+		return moves
+
+	def chooseOptimalMove(self) -> list:
+		# return a list of 2 elements, the start and end pos
+		moves = []
+		moves.extend(self.getNormalMoves())
+		moves.extend(self.getAttackingMoves())
+		moves = [elem for elem in moves if elem != []]
+		# simulate optimal play for x depth, then choose best move
+		# currently, choose random move
+
+		return random.choice(moves)
 

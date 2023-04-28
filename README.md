@@ -1,3 +1,3 @@
-# chess-contest-api
+# chess-contest-bot
 
-Details not yet final!
+
