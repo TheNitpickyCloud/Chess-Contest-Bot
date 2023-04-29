@@ -45,3 +45,5 @@ class PlayGame:
         else:
           boardState, move = player2.get_move(boardState)
           self.finalMoves.append(move)
+
+      print(player1.points, player2.points)

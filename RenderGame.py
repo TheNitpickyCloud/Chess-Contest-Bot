@@ -28,6 +28,7 @@ while True:
 				display.update(board.fen(), game_board)
 			else:
 				print("invalid move:", move_list[i][0] + move_list[i][1])
+				print(move_list)
 				break
 
 			i += 1
