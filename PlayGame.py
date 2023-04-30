@@ -38,7 +38,7 @@ class PlayGame:
       player2 = Engine(PlayerColour.Black, 5.0) # black
       boardState = BoardState(self.init_board())
 
-      for i in range(0, 20):
+      for i in range(0, 50):
         if i%2 == 0:
           boardState, move = player1.get_move(boardState)
           self.finalMoves.append(move)
