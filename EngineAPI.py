@@ -87,8 +87,11 @@ class Engine:
 		all_moves.extend(pawnMoves)
 		all_moves.extend(knightMoves)
 
+		if len(all_moves) == 0:
+			# resign
+			return BoardState.resign(), None
 
-		optimalMove = getOptimalMove(self.color, board_state, all_moves, 1, 2)
+		optimalMove = getOptimalMove(self.color, self.color, board_state, all_moves, 1, 4)
 		# optimalMove = random.choice(pawnMoves)
 
 		self.points += optimalMove[2]
@@ -102,12 +105,13 @@ class Engine:
 		return newBoardState, optimalMove
 	
 class TestEngine:
-	def __init__(self, colour, time_per_move: float, depth: int, finalDepth: int):
+	def __init__(self, colour, initColor, time_per_move: float, depth: int, finalDepth: int):
 		if colour == PlayerColour.White:
 			self.color = 0
 		else:
 			self.color = 1
 
+		self.initColor = initColor
 		self.time_per_move = time_per_move
 		self.depth = depth
 		self.finalDepth = finalDepth
@@ -163,7 +167,7 @@ class TestEngine:
 		all_moves.extend(pawnMoves)
 		all_moves.extend(knightMoves)
 
-		optimalMove = getOptimalMove(self.color, board_state, all_moves, self.depth, self.finalDepth)
+		optimalMove = getOptimalMove(self.color, self.initColor, board_state, all_moves, self.depth, self.finalDepth)
 
 		pos[optimalMove[0]] = BoardPiece.EmptySquare
 		
@@ -174,26 +178,42 @@ class TestEngine:
 		return newBoardState, optimalMove, optimalMove[2]
 
 
-def getOptimalMove(color, currBoardState, moves, depth, finalDepth): # finalDepth will always be even, base case will always be opposing
+def getOptimalMove(color, initColor, currBoardState, moves, depth, finalDepth):
 	# simulate optimal play for x depth, then choose best move
 	# currently, choose random move
 	# return random.choice(moves)
 
 	moves.sort(key = lambda x: x[2])
 
-	# base case, return the move with the max score
+	# base cases
+
+	if len(moves) == 0:
+		if color == initColor:
+			return ['x', 'x', -float('inf'), BoardPiece.EmptySquare]
+		else:
+			return ['x', 'x', float('inf'), BoardPiece.EmptySquare]
+
 	if depth == finalDepth:
 		# print(color, depth, moves[-1])
-		return moves[-1]
+		if color == initColor: # return the move with the max score
+			# print(color, initColor)
+			return moves[-1]
+		else: # return the move with the min score
+			return moves[0]
 	
 	testPlayer = None
 	if color == 0: # am white, next player will be black
-		testPlayer = TestEngine(PlayerColour.Black, 5.0, depth+1, finalDepth)
+		testPlayer = TestEngine(PlayerColour.Black, initColor, 5.0, depth+1, finalDepth)
 	else: # am black, next player will be white
-		testPlayer = TestEngine(PlayerColour.White, 5.0, depth+1, finalDepth)
+		testPlayer = TestEngine(PlayerColour.White, initColor, 5.0, depth+1, finalDepth)
 
-	maxScore = -float('inf')
+	theScore = None
 	theMove = None
+
+	if color != initColor: # minimize the score for initColor
+		theScore = float('inf')
+	else: # maximize the score for initColor
+		theScore = -float('inf')
 
 	for move in moves:
 		pos = {}
@@ -209,9 +229,14 @@ def getOptimalMove(color, currBoardState, moves, depth, finalDepth): # finalDept
 
 		possMove = testPlayer.get_move(newBoardState)
 
-		if move[2] - possMove[2] > maxScore: # maximize the score
-			theMove = move
-			maxScore = move[2] - possMove[2]
+		if color == initColor:
+			if move[2] - possMove[2] > theScore: # maximize the score
+				theMove = move
+				theScore = move[2] - possMove[2]
+		else:
+			if move[2] - possMove[2] < theScore: # minimize the score
+				theMove = move
+				theScore = move[2] - possMove[2]
 
 	# print(color, depth, theMove)
 	return theMove
@@ -232,10 +257,6 @@ class Pawns:
 
 		for pawn in self.pawnList:
 			if self.color == 0:
-				if pawn[1] == '8':
-					# get new piece (queen, duh)
-					continue
-
 				if pawn[0] + nextChar(pawn[1], 1) in self.possibleList:
 					moves.append([pawn, pawn[0] + nextChar(pawn[1], 1), 0])
 
@@ -243,10 +264,6 @@ class Pawns:
 					moves.append([pawn, pawn[0] + nextChar(pawn[1], 2), 0])
 
 			else:
-				if pawn[1] == '1':
-					# get new piece (queen, duh)
-					continue
-
 				if pawn[0] + nextChar(pawn[1], -1) in self.possibleList:
 					moves.append([pawn, pawn[0] + nextChar(pawn[1], -1), 0])
 
@@ -284,11 +301,17 @@ class Pawns:
 		
 		if self.color == 0:
 			for elem in moves:
-				elem.append(BoardPiece.WhitePawn)
+				if elem[1][1] == '8':
+					elem.append(BoardPiece.WhiteQueen)
+				else:
+					elem.append(BoardPiece.WhitePawn)
 
 		else:
 			for elem in moves:
-				elem.append(BoardPiece.BlackPawn)
+				if elem[1][1] == '1':
+					elem.append(BoardPiece.BlackQueen)
+				else:
+					elem.append(BoardPiece.BlackPawn)
 
 		return moves
 
@@ -370,5 +393,6 @@ class Knights:
 			for elem in moves:
 				elem.append(BoardPiece.BlackKnight)
 
+		# print(self.color, len(moves))
 		return moves
 	

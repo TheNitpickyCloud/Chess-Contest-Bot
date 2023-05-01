@@ -38,12 +38,23 @@ class PlayGame:
       player2 = Engine(PlayerColour.Black, 5.0) # black
       boardState = BoardState(self.init_board())
 
-      for i in range(0, 50):
+      # for 1 deep, limit = 52
+      # for 2 deep, limit = 64
+
+      for i in range(0, 80):
         if i%2 == 0:
           boardState, move = player1.get_move(boardState)
+
+          if boardState.piece_at('a', '1') == BoardPiece.Resignation:
+            break
+
           self.finalMoves.append(move)
         else:
           boardState, move = player2.get_move(boardState)
+
+          if boardState.piece_at('a', '1') == BoardPiece.Resignation:
+            break
+
           self.finalMoves.append(move)
 
       print(player1.points, player2.points)
