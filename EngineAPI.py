@@ -15,13 +15,13 @@ pointsDict = {
 	BoardPiece.BlackBishop: 3,
 	BoardPiece.BlackRook: 5,
 	BoardPiece.BlackQueen: 9,
-	BoardPiece.BlackKing: 100000,
+	BoardPiece.BlackKing: 0,
 	BoardPiece.WhitePawn: 1,
 	BoardPiece.WhiteKnight: 3,
 	BoardPiece.WhiteBishop: 3,
 	BoardPiece.WhiteRook: 5,
 	BoardPiece.WhiteQueen: 9,
-	BoardPiece.WhiteKing: 100000
+	BoardPiece.WhiteKing: 0
 }
 
 class Engine:
@@ -36,62 +36,13 @@ class Engine:
 	
 	def get_move(self, board_state: BoardState):
 		pos = {}
-		possibleList = []
-		enemyPosDict = {}
-		pawnList = []
-		knightList = []
 
 		# get old map
 		for file in files:
 			for rank in ranks:
 				pos[file+rank] = board_state.piece_at(file, rank)
 
-				if self.color == 0:
-					if str(pos[file+rank]).find('Empty') != -1: # empty square
-						possibleList.append(file+rank)
-
-					else:
-						if str(pos[file+rank]).find('White') == -1: # black square
-							enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
-
-						elif str(pos[file+rank]).find('Pawn') != -1: # white pawn
-							pawnList.append(file+rank)
-
-						elif str(pos[file+rank]).find('Knight') != -1: # white knight
-							knightList.append(file+rank)
-
-				else:
-					if str(pos[file+rank]).find('Empty') != -1: # empty square
-						possibleList.append(file+rank)
-
-					else:
-						if str(pos[file+rank]).find('Black') == -1: # white square
-							enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
-
-						elif str(pos[file+rank]).find('Pawn') != -1: # black pawn
-							pawnList.append(file+rank)
-
-						elif str(pos[file+rank]).find('Knight') != -1: # black knight
-							knightList.append(file+rank)
-
-
-		# return the new BoardState and the (oldPos, newPos) combo. Remove the latter in production
-
-		pawns = Pawns(self.color, possibleList, pawnList, enemyPosDict)
-		knights = Knights(self.color, possibleList, knightList, enemyPosDict)
-
-		pawnMoves = pawns.getMoves()
-		knightMoves = knights.getMoves()
-
-		all_moves = []
-		all_moves.extend(pawnMoves)
-		all_moves.extend(knightMoves)
-
-		if len(all_moves) == 0:
-			# resign
-			return BoardState.resign(), None
-
-		optimalMove = getOptimalMove(self.color, self.color, board_state, all_moves, 1, 4)
+		optimalMove = getOptimalMove(self.color, self.color, board_state, 1, 2)
 		# optimalMove = random.choice(pawnMoves)
 
 		self.points += optimalMove[2]
@@ -103,117 +54,165 @@ class Engine:
 		newBoardState = BoardState(pos)
 
 		return newBoardState, optimalMove
-	
-class TestEngine:
-	def __init__(self, colour, initColor, time_per_move: float, depth: int, finalDepth: int):
-		if colour == PlayerColour.White:
-			self.color = 0
-		else:
-			self.color = 1
 
-		self.initColor = initColor
-		self.time_per_move = time_per_move
-		self.depth = depth
-		self.finalDepth = finalDepth
-	
-	def get_move(self, board_state: BoardState):
-		pos = {}
-		possibleList = []
-		enemyPosDict = {} # enemy pos, points
-		pawnList = []
-		knightList = []
+def get_all_moves(color: int, board_state: BoardState) -> list:
+	pos = {}
+	possibleList = []
+	enemyPosDict = {} # enemy pos, points
+	pawnList = []
+	knightList = []
+	bishopList = []
 
-		# get old map
-		for file in files:
-			for rank in ranks:
-				pos[file+rank] = board_state.piece_at(file, rank)
+	# get map
+	for file in files:
+		for rank in ranks:
+			pos[file+rank] = board_state.piece_at(file, rank)
 
-				if self.color == 0:
-					if str(pos[file+rank]).find('Empty') != -1: # empty square
-						possibleList.append(file+rank)
-
-					else:
-						if str(pos[file+rank]).find('White') == -1: # black square
-							enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
-
-						elif str(pos[file+rank]).find('Pawn') != -1: # white pawn
-							pawnList.append(file+rank)
-
-						elif str(pos[file+rank]).find('Knight') != -1: # white knight
-							knightList.append(file+rank)
+			if color == 0:
+				if str(pos[file+rank]).find('Empty') != -1: # empty square
+					possibleList.append(file+rank)
 
 				else:
-					if str(pos[file+rank]).find('Empty') != -1: # empty square
-						possibleList.append(file+rank)
+					if str(pos[file+rank]).find('White') == -1: # black square
+						enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
 
-					else:
-						if str(pos[file+rank]).find('Black') == -1: # white square
-							enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
+					elif str(pos[file+rank]).find('Pawn') != -1: # white pawn
+						pawnList.append(file+rank)
 
-						elif str(pos[file+rank]).find('Pawn') != -1: # black pawn
-							pawnList.append(file+rank)
+					elif str(pos[file+rank]).find('Knight') != -1: # white knight
+						knightList.append(file+rank)
 
-						elif str(pos[file+rank]).find('Knight') != -1: # white knight
-							knightList.append(file+rank)
+					elif str(pos[file+rank]).find('Bishop') != -1: # white bishop
+						bishopList.append(file+rank)
 
+			else:
+				if str(pos[file+rank]).find('Empty') != -1: # empty square
+					possibleList.append(file+rank)
 
-		pawns = Pawns(self.color, possibleList, pawnList, enemyPosDict)
-		knights = Knights(self.color, possibleList, knightList, enemyPosDict)
+				else:
+					if str(pos[file+rank]).find('Black') == -1: # white square
+						enemyPosDict[file+rank] = pointsDict[pos[file+rank]]
 
-		pawnMoves = pawns.getMoves()
-		knightMoves = knights.getMoves()
+					elif str(pos[file+rank]).find('Pawn') != -1: # black pawn
+						pawnList.append(file+rank)
 
-		all_moves = []
-		all_moves.extend(pawnMoves)
-		all_moves.extend(knightMoves)
+					elif str(pos[file+rank]).find('Knight') != -1: # black knight
+						knightList.append(file+rank)
 
-		optimalMove = getOptimalMove(self.color, self.initColor, board_state, all_moves, self.depth, self.finalDepth)
+					elif str(pos[file+rank]).find('Bishop') != -1: # black bishop
+						bishopList.append(file+rank)
 
-		pos[optimalMove[0]] = BoardPiece.EmptySquare
-		
-		pos[optimalMove[1]] = optimalMove[3]
+	pawns = Pawns(color, possibleList, pawnList, enemyPosDict)
+	knights = Knights(color, possibleList, knightList, enemyPosDict)
+	bishops = Bishops(color, possibleList, bishopList, enemyPosDict)
 
-		newBoardState = BoardState(pos)
+	pawnMoves = pawns.getMoves()
+	knightMoves = knights.getMoves()
+	bishopMoves = bishops.getMoves()
 
-		return newBoardState, optimalMove, optimalMove[2]
+	all_moves = []
+	all_moves.extend(pawnMoves)
+	all_moves.extend(knightMoves)
+	all_moves.extend(bishopMoves)
 
+	return all_moves
 
-def getOptimalMove(color, initColor, currBoardState, moves, depth, finalDepth):
+def get_board_score(color: int, board_state: BoardState) -> int:
+	blackScore = 0
+	whiteScore = 0
+
+	for file in files:
+		for rank in ranks:
+			piece = board_state.piece_at(file, rank)
+
+			if str(piece).find("Resignation") != -1: # resigned
+				return 0
+
+			if str(piece).find('Empty') == -1: # not empty square
+				if str(piece).find('Black') == -1: # white square
+					whiteScore += pointsDict[piece]
+
+				else: # black square
+					blackScore += pointsDict[piece]
+
+	if color == 0:
+		return whiteScore - blackScore
+	else:
+		return blackScore - whiteScore
+
+def getOptimalMove(color: int, initColor: int, currBoardState: BoardState, depth: int, finalDepth: int):
 	# simulate optimal play for x depth, then choose best move
-	# currently, choose random move
-	# return random.choice(moves)
-
-	moves.sort(key = lambda x: x[2])
-
-	# base cases
-
-	if len(moves) == 0:
-		if color == initColor:
-			return ['x', 'x', -float('inf'), BoardPiece.EmptySquare]
-		else:
-			return ['x', 'x', float('inf'), BoardPiece.EmptySquare]
-
-	if depth == finalDepth:
-		# print(color, depth, moves[-1])
-		if color == initColor: # return the move with the max score
-			# print(color, initColor)
-			return moves[-1]
-		else: # return the move with the min score
-			return moves[0]
-	
-	testPlayer = None
-	if color == 0: # am white, next player will be black
-		testPlayer = TestEngine(PlayerColour.Black, initColor, 5.0, depth+1, finalDepth)
-	else: # am black, next player will be white
-		testPlayer = TestEngine(PlayerColour.White, initColor, 5.0, depth+1, finalDepth)
 
 	theScore = None
-	theMove = None
+	otherPlayer = None
+	moveList = []
 
-	if color != initColor: # minimize the score for initColor
+	if color != initColor:
 		theScore = float('inf')
-	else: # maximize the score for initColor
+	else:
 		theScore = -float('inf')
+
+	if color == 0:
+		otherPlayer = 1
+	else:
+		otherPlayer = 0
+
+	# get moves
+	moves = get_all_moves(color, currBoardState)
+
+	# base cases
+	if len(moves) == 0:
+		return ['a1', 'a1', 0, BoardPiece.Resignation]
+
+	if depth == finalDepth:
+		if color != initColor: # enemy move, return min score
+			for move in moves:
+				pos = {}
+				for file in files:
+					for rank in ranks:
+						pos[file+rank] = currBoardState.piece_at(file, rank)
+
+				pos[move[0]] = BoardPiece.EmptySquare
+		
+				pos[move[1]] = move[3]
+
+				newBoardState = BoardState(pos)
+
+				newScore = get_board_score(initColor, newBoardState)
+
+				if newScore < theScore:
+					theScore = newScore
+					moveList.clear()
+					moveList.append(move)
+
+				elif newScore == theScore:
+					moveList.append(move)
+
+		else: # player move, return max score
+			for move in moves:
+				pos = {}
+				for file in files:
+					for rank in ranks:
+						pos[file+rank] = currBoardState.piece_at(file, rank)
+
+				pos[move[0]] = BoardPiece.EmptySquare
+		
+				pos[move[1]] = move[3]
+
+				newBoardState = BoardState(pos)
+
+				newScore = get_board_score(initColor, newBoardState)
+
+				if newScore > theScore:
+					theScore = newScore
+					moveList.clear()
+					moveList.append(move)
+
+				elif newScore == theScore:
+					moveList.append(move)
+
+		# print(len(moveList))
+		return random.choice(moveList)
 
 	for move in moves:
 		pos = {}
@@ -222,24 +221,36 @@ def getOptimalMove(color, initColor, currBoardState, moves, depth, finalDepth):
 				pos[file+rank] = currBoardState.piece_at(file, rank)
 
 		pos[move[0]] = BoardPiece.EmptySquare
-		
 		pos[move[1]] = move[3]
 
 		newBoardState = BoardState(pos)
 
-		possMove = testPlayer.get_move(newBoardState)
+		possMove = getOptimalMove(otherPlayer, initColor, newBoardState, depth+1, finalDepth)
 
-		if color == initColor:
-			if move[2] - possMove[2] > theScore: # maximize the score
-				theMove = move
-				theScore = move[2] - possMove[2]
+		pos[possMove[0]] = BoardPiece.EmptySquare
+		pos[possMove[1]] = possMove[3]
+
+		score = get_board_score(initColor, BoardState(pos))
+
+		if color != initColor:
+			if score < theScore: # minimize the score
+				moveList.clear()
+				moveList.append(move)
+				theScore = score
+			
+			elif score == theScore:
+				moveList.append(move)
+
 		else:
-			if move[2] - possMove[2] < theScore: # minimize the score
-				theMove = move
-				theScore = move[2] - possMove[2]
+			if score > theScore: # maximize the score
+				moveList.clear()
+				moveList.append(move)
+				theScore = score
+			
+			elif score == theScore:
+				moveList.append(move)
 
-	# print(color, depth, theMove)
-	return theMove
+	return random.choice(moveList)
 
 def nextChar(char: chr, inc: int):
 	return chr(ord(char)+inc)
@@ -252,7 +263,7 @@ class Pawns:
 		self.possibleList = possibleList
 
 	def getNormalMoves(self) -> list:
-		# return a list of possible moves in the format (start, end, points)
+		# return a list of possible moves in the format (start, end, points, piece)
 		moves = []
 
 		for pawn in self.pawnList:
@@ -395,4 +406,79 @@ class Knights:
 
 		# print(self.color, len(moves))
 		return moves
-	
+
+class Bishops:
+	def __init__(self, color: int, possibleList: list, bishopList: list, enemyPosDict: dict):
+		self.color = color
+		self.bishopList = bishopList
+		self.enemyPosDict = enemyPosDict
+		self.possibleList = possibleList
+
+	def getAllMoves(self) -> list:
+		# return a list of possible moves in the format (start, end, points)
+		moves = []
+
+		for bishop in self.bishopList:
+			# normal and attacking moves
+			for i in range(1, 9): # top right
+				if nextChar(bishop[0], i) + nextChar(bishop[1], i) in self.enemyPosDict:
+					moves.append([bishop, nextChar(bishop[0], i) + nextChar(bishop[1], i), self.enemyPosDict[nextChar(bishop[0], i) + nextChar(bishop[1], i)]])
+					break
+				
+				elif nextChar(bishop[0], i) + nextChar(bishop[1], i) in self.possibleList:
+					moves.append([bishop, nextChar(bishop[0], i) + nextChar(bishop[1], i), 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # top left
+				if nextChar(bishop[0], -i) + nextChar(bishop[1], i) in self.enemyPosDict:
+					moves.append([bishop, nextChar(bishop[0], -i) + nextChar(bishop[1], i), self.enemyPosDict[nextChar(bishop[0], -i) + nextChar(bishop[1], i)]])
+					break
+				
+				elif nextChar(bishop[0], -i) + nextChar(bishop[1], i) in self.possibleList:
+					moves.append([bishop, nextChar(bishop[0], -i) + nextChar(bishop[1], i), 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # bottom right
+				if nextChar(bishop[0], i) + nextChar(bishop[1], -i) in self.enemyPosDict:
+					moves.append([bishop, nextChar(bishop[0], i) + nextChar(bishop[1], -i), self.enemyPosDict[nextChar(bishop[0], i) + nextChar(bishop[1], -i)]])
+					break
+				
+				elif nextChar(bishop[0], i) + nextChar(bishop[1], -i) in self.possibleList:
+					moves.append([bishop, nextChar(bishop[0], i) + nextChar(bishop[1], -i), 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # bottom left
+				if nextChar(bishop[0], -i) + nextChar(bishop[1], -i) in self.enemyPosDict:
+					moves.append([bishop, nextChar(bishop[0], -i) + nextChar(bishop[1], -i), self.enemyPosDict[nextChar(bishop[0], -i) + nextChar(bishop[1], -i)]])
+					break
+				
+				elif nextChar(bishop[0], -i) + nextChar(bishop[1], -i) in self.possibleList:
+					moves.append([bishop, nextChar(bishop[0], -i) + nextChar(bishop[1], -i), 0])
+
+				else:
+					break
+
+		return moves
+
+	def getMoves(self) -> list:
+		# return a list of 4 elements, the start pos, end pos, points and the piece
+		moves = []
+		moves.extend(self.getAllMoves())
+		moves = [elem for elem in moves if elem != []]
+		
+		if self.color == 0:
+			for elem in moves:
+				elem.append(BoardPiece.WhiteBishop)
+
+		else:
+			for elem in moves:
+				elem.append(BoardPiece.BlackBishop)
+
+		# print(self.color, len(moves))
+		return moves
