@@ -62,6 +62,7 @@ def get_all_moves(color: int, board_state: BoardState) -> list:
 	pawnList = []
 	knightList = []
 	bishopList = []
+	rookList = []
 
 	# get map
 	for file in files:
@@ -85,6 +86,9 @@ def get_all_moves(color: int, board_state: BoardState) -> list:
 					elif str(pos[file+rank]).find('Bishop') != -1: # white bishop
 						bishopList.append(file+rank)
 
+					elif str(pos[file+rank]).find('Rook') != -1: # white rook
+						rookList.append(file+rank)
+
 			else:
 				if str(pos[file+rank]).find('Empty') != -1: # empty square
 					possibleList.append(file+rank)
@@ -102,18 +106,24 @@ def get_all_moves(color: int, board_state: BoardState) -> list:
 					elif str(pos[file+rank]).find('Bishop') != -1: # black bishop
 						bishopList.append(file+rank)
 
+					elif str(pos[file+rank]).find('Rook') != -1: # black rook
+						rookList.append(file+rank)
+
 	pawns = Pawns(color, possibleList, pawnList, enemyPosDict)
 	knights = Knights(color, possibleList, knightList, enemyPosDict)
 	bishops = Bishops(color, possibleList, bishopList, enemyPosDict)
+	rooks = Rooks(color, possibleList, rookList, enemyPosDict)
 
 	pawnMoves = pawns.getMoves()
 	knightMoves = knights.getMoves()
 	bishopMoves = bishops.getMoves()
+	rookMoves = rooks.getMoves()
 
 	all_moves = []
 	all_moves.extend(pawnMoves)
 	all_moves.extend(knightMoves)
 	all_moves.extend(bishopMoves)
+	all_moves.extend(rookMoves)
 
 	return all_moves
 
@@ -482,3 +492,80 @@ class Bishops:
 
 		# print(self.color, len(moves))
 		return moves
+
+class Rooks:
+	def __init__(self, color: int, possibleList: list, rookList: list, enemyPosDict: dict):
+		self.color = color
+		self.rookList = rookList
+		self.enemyPosDict = enemyPosDict
+		self.possibleList = possibleList
+
+	def getAllMoves(self) -> list:
+		# return a list of possible moves in the format (start, end, points)
+		moves = []
+
+		for rook in self.rookList:
+			# normal and attacking moves
+			for i in range(1, 9): # top
+				if rook[0] + nextChar(rook[1], i) in self.enemyPosDict:
+					moves.append([rook, rook[0] + nextChar(rook[1], i), self.enemyPosDict[rook[0] + nextChar(rook[1], i)]])
+					break
+				
+				elif rook[0] + nextChar(rook[1], i) in self.possibleList:
+					moves.append([rook, rook[0] + nextChar(rook[1], i), 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # bottom
+				if rook[0] + nextChar(rook[1], -i) in self.enemyPosDict:
+					moves.append([rook, rook[0] + nextChar(rook[1], -i), self.enemyPosDict[rook[0] + nextChar(rook[1], -i)]])
+					break
+				
+				elif rook[0] + nextChar(rook[1], -i) in self.possibleList:
+					moves.append([rook, rook[0] + nextChar(rook[1], -i), 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # right
+				if nextChar(rook[0], i) + rook[1] in self.enemyPosDict:
+					moves.append([rook, nextChar(rook[0], i) + rook[1], self.enemyPosDict[nextChar(rook[0], i) + rook[1]]])
+					break
+				
+				elif nextChar(rook[0], i) + rook[1] in self.possibleList:
+					moves.append([rook, nextChar(rook[0], i) + rook[1], 0])
+
+				else:
+					break
+
+			for i in range(1, 9): # left
+				if nextChar(rook[0], -i) + rook[1] in self.enemyPosDict:
+					moves.append([rook, nextChar(rook[0], -i) + rook[1], self.enemyPosDict[nextChar(rook[0], -i) + rook[1]]])
+					break
+				
+				elif nextChar(rook[0], -i) + rook[1] in self.possibleList:
+					moves.append([rook, nextChar(rook[0], -i) + rook[1], 0])
+
+				else:
+					break
+
+		return moves
+
+	def getMoves(self) -> list:
+		# return a list of 4 elements, the start pos, end pos, points and the piece
+		moves = []
+		moves.extend(self.getAllMoves())
+		moves = [elem for elem in moves if elem != []]
+		
+		if self.color == 0:
+			for elem in moves:
+				elem.append(BoardPiece.WhiteRook)
+
+		else:
+			for elem in moves:
+				elem.append(BoardPiece.BlackRook)
+
+		# print(self.color, len(moves))
+		return moves
+

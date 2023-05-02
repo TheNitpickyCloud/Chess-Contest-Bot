@@ -41,7 +41,7 @@ class PlayGame:
       # for 1 deep, limit = 52
       # for 2 deep, limit = 64
 
-      for i in range(0, 80):
+      for i in range(0, 200):
         if i%2 == 0:
           boardState, move = player1.get_move(boardState)
 
