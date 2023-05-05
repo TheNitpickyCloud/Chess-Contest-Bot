@@ -1,8 +1,7 @@
 # chess-contest-bot
 
 Todo:
-1. Remove looping over chessboard every time, keep track of pieces instead
-2. Find optimal sorting for the moves for alpha beta pruning
+1. Find optimal sorting for the moves for alpha beta pruning
 
 Heuristics:
 1. Pawn promotion reward
