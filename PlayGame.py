@@ -1,6 +1,7 @@
 from ContestUtils import PlayerColour
 from ContestUtils import BoardState, BoardPiece
 from EngineAPI import Engine
+import time
 
 class PlayGame:
     def init_board(self):
@@ -42,19 +43,48 @@ class PlayGame:
       # for 2 deep, limit = 64
 
       for i in range(0, 200):
-        if i%2 == 0:
-          boardState, move = player1.get_move(boardState)
+        startTime = time.time()
 
-          if boardState.piece_at('a', '1') == BoardPiece.Resignation:
+        if i%2 == 0:
+          boardState, move, extra = player1.get_move(boardState)
+
+          if extra != None:
+            print(extra)
+
+          if move == None:
+            print("black wins!")
             break
 
+          # if extra == -float('inf'):
+          #   print(i, "black wins!")
+          #   break
+          # if extra == float('inf'):
+          #   print(i, "black wins!")
+          #   break
+          
           self.finalMoves.append(move)
         else:
-          boardState, move = player2.get_move(boardState)
+          boardState, move, extra = player2.get_move(boardState)
 
-          if boardState.piece_at('a', '1') == BoardPiece.Resignation:
+          if extra != None:
+            print(extra)
+
+          if move == None:
+            print("white wins!")
             break
 
+          # if extra == -float('inf'):
+          #   print(i, "black wins!")
+          #   break
+          # if extra == float('inf'):
+          #   print(i, "black wins!")
+          #   break 
+          
           self.finalMoves.append(move)
 
-      print(player1.points, player2.points)
+        endTime = time.time()
+
+        print("Time taken for this move:", endTime-startTime)
+
+      else:
+        print("draw!")
