@@ -39,7 +39,7 @@ class PlayGame:
       player2 = Engine(PlayerColour.Black, 5.0) # black
       boardState = BoardState(self.init_board())
 
-      for i in range(0, 10):
+      for i in range(0, 100):
         startTime = time.time()
 
         if i%2 == 0:
