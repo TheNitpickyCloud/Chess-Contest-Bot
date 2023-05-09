@@ -2,6 +2,7 @@
 
 Todo:
 1. Find optimal sorting for the moves for alpha beta pruning
+2. Add maps for pieces
 
 Heuristics:
 1. Pawn promotion reward

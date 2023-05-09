@@ -61,6 +61,8 @@ class PlayGame:
           print("black wins!")
         
         print(move[0], move[1])
+        if extra != None:
+          print(extra)
         
       else:
         boardState, move, extra = player2.get_move(boardState)
@@ -69,6 +71,8 @@ class PlayGame:
           print("white wins!")
         
         print(move[0], move[1])
+        if extra != None:
+          print(extra)
 
       endTime = time.time()
 

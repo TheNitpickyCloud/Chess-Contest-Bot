@@ -3,9 +3,9 @@ Write your code in this file to participate in the Chess Bot challenge!
 
 Username: ghosty
 """
-from ContestUtils import PlayerColour
-from ContestUtils import BoardState, BoardPiece
+from ContestUtils import PlayerColour, BoardState, BoardPiece
 import random
+from functools import cmp_to_key
 
 files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
@@ -47,13 +47,12 @@ class Engine:
 					pos[file+rank] = piece
 
 		optimalMove, score, extra = getOptimalMove(self.color, self.color, pos, 1, 2, -float('inf'), float('inf'), self.zobristHash, self.hashLookup)
-		# optimalMove = random.choice(pawnMoves)
-
-		# if optimalMove == None:
-		# 	return None, None, None
 
 		if optimalMove == None:
-			return None
+			return None, None, None
+
+		# if optimalMove == None:
+		# 	return None
 
 		del pos[optimalMove[0]]
 		
@@ -61,9 +60,9 @@ class Engine:
 
 		newBoardState = BoardState(pos)
 
-		# return newBoardState, optimalMove, extra
+		return newBoardState, optimalMove, extra
 
-		return newBoardState
+		# return newBoardState
 	
 def initZobristHash():
 	zobristHash = {}
@@ -425,7 +424,7 @@ def getOptimalAttackingMove(color: int, initColor: int, posDict: dict, alpha, be
 	if depth > finalDepth:
 		return theScore
 
-	attackingMoves = get_attacking_moves(color, posDict)
+	attackingMoves = get_legal_attacking_moves(color, posDict)
 	pos = posDict
 
 	for move in attackingMoves: 
@@ -438,10 +437,7 @@ def getOptimalAttackingMove(color: int, initColor: int, posDict: dict, alpha, be
 			orgTo = pos[move[1]]
 
 		del pos[move[0]]
-		try:
-			pos[move[1]] = move[3]
-		except:
-			print(move)
+		pos[move[1]] = move[3]
 
 		# get score of optimal move
 		score = getOptimalAttackingMove(not color, initColor, pos, alpha, beta, depth+1, finalDepth)
@@ -485,7 +481,7 @@ def getOptimalMove(color: int, initColor: int, posDict: dict, depth: int, finalD
 			return None, -float('inf'), None
 
 	if depth > finalDepth:
-		return None, getOptimalAttackingMove(color, initColor, posDict, alpha, beta, 1, 2), None
+		return None, getOptimalAttackingMove(color, initColor, posDict, alpha, beta, 1, 3), None
 	
 	# sort moves
 	moves.sort(key=lambda x: x[2], reverse=True)
@@ -503,6 +499,9 @@ def getOptimalMove(color: int, initColor: int, posDict: dict, depth: int, finalD
 	for move in moves:
 		orgFrom = None
 		orgTo = None
+		aMove = None
+		score = None
+		extra = None
 
 		# make move
 		orgFrom = pos[move[0]]
@@ -517,20 +516,14 @@ def getOptimalMove(color: int, initColor: int, posDict: dict, depth: int, finalD
 
 		# check if hash is already computed before
 		if hash in hashLookup:
-			# unmake move
-			pos[move[0]] = orgFrom
-			if orgTo != None:
-				pos[move[1]] = orgTo
-			else:
-				del pos[move[1]]
+			aMove, score, extra = move, hashLookup[hash], [move]
+
+		else:
+			# get score of optimal move
+			aMove, score, extra = getOptimalMove(not color, initColor, pos, depth+1, finalDepth, alpha, beta, zobristHash, hashLookup)
 			
-			return move, hashLookup[hash], None
-
-		# get score of optimal move
-		aMove, score, extra = getOptimalMove(not color, initColor, pos, depth+1, finalDepth, alpha, beta, zobristHash, hashLookup)
-
-		# store hash in hash lookup
-		hashLookup[hash] = score
+			# store hash in hash lookup
+			hashLookup[hash] = score
 
 		# unmake move
 		pos[move[0]] = orgFrom
@@ -566,7 +559,8 @@ def getOptimalMove(color: int, initColor: int, posDict: dict, depth: int, finalD
 				break
 
 	if len(moveList) > 0:
-			return random.choice(moveList), theScore, None
+			return random.choice(moveList), theScore, moveList
+			# return moveList[0], theScore, moveList
 
 	else:
 		return None, theScore, None
